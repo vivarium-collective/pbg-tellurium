@@ -57,7 +57,9 @@ model repressilator
   Dp2: p2 -> ; beta_p * p2
   Dp3: p3 -> ; beta_p * p3
 
-  alpha = 50; alpha0 = 0.5; K = 40; n = 2
+  // Oscillatory regime: n=3 cooperativity pushes past the Hopf
+  // bifurcation for alpha=216, K=40 (Elowitz-Leibler parameters).
+  alpha = 216; alpha0 = 0.2; K = 40; n = 3
   beta_m = 1.0; beta_p = 0.2
 end
 """
