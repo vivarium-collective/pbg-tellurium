@@ -1,5 +1,6 @@
 name: decay-demo
 description: "Tiny Tellurium / Antimony decay demo: S1 -> S2 first-order kinetics. Emits species concentrations, reaction rates, and time each step."
+tags: [systems-biology, ode, sbml, demo]
 
 requires:
   processes: [TelluriumProcess, RAMEmitter]

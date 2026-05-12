@@ -1,5 +1,6 @@
 name: decay-with-viz
 description: "Tellurium decay demo with a wired Visualization Step. Each update produces a Plotly HTML figure of the running species trajectories, written to the 'viz_html' store."
+tags: [systems-biology, ode, sbml, demo, visualization]
 
 requires:
   processes: [TelluriumProcess, SpeciesTimeSeriesPlots, RAMEmitter]
