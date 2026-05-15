@@ -201,31 +201,33 @@ class BaseTelluriumStep(Step):
     }
 
     def _tellurium_initialize(self):
-        model_source = _model_path_resolution(self.config['model'])
-        self.rr = _load_roadrunner(
+        if hasattr(self, '_rr'):
+            return
+        cfg = self.config
+        if not cfg['model'] and not cfg['model_file']:
+            raise ValueError(
+                "TelluriumProcess requires either 'model' or 'model_file'.")
+        model_source = _model_path_resolution(cfg['model'])
+        self._rr = _load_roadrunner(
             model_source,
-            model_format=self.config['model_format'],
-            model_file=self.config.get('model_file', ''),
+            model_format=cfg['model_format'],
+            model_file=cfg.get('model_file', ''),
         )
-        self.species_ids = list(self.rr.getFloatingSpeciesIds())
-        self.reaction_ids = list(self.rr.getReactionIds())
-        self._species_index = {sid: i for i, sid in enumerate(self.species_ids)}
+        self._species_ids = list(self._rr.getFloatingSpeciesIds())
+        self._reaction_ids = list(self._rr.getReactionIds())
+        self._species_index = {sid: i for i, sid in enumerate(self._species_ids)}
 
     def initial_state(self):
-        if not hasattr(self, 'rr'):
-            self._tellurium_initialize()
-        conc = self.rr.getFloatingSpeciesConcentrations()
+        self._tellurium_initialize()
+        conc = self._rr.getFloatingSpeciesConcentrations()
         return {
             'species_concentrations': {
-                sid: float(conc[i]) for i, sid in enumerate(self.species_ids)
+                sid: float(conc[i]) for i, sid in enumerate(self._species_ids)
             }
         }
 
     def inputs(self):
         return {}
-
-    def outputs(self):
-        return {'html': 'string'}  # overridden by concrete subclasses
 
 
 class TelluriumStep(Step):
