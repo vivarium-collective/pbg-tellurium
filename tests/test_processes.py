@@ -2,7 +2,7 @@
 
 import pytest
 from process_bigraph import allocate_core
-from pbg_tellurium.processes import TelluriumProcess, TelluriumStep
+from pbg_tellurium.processes import TelluriumProcess, TelluriumUTCStep
 
 
 MODEL_DECAY = """
@@ -27,7 +27,7 @@ end
 def core():
     c = allocate_core()
     c.register_link('TelluriumProcess', TelluriumProcess)
-    c.register_link('TelluriumStep', TelluriumStep)
+    c.register_link('TelluriumUTCStep', TelluriumUTCStep)
     return c
 
 
@@ -145,7 +145,7 @@ def test_gillespie_integrator(core):
 
 
 def test_tellurium_step(core):
-    step = TelluriumStep(
+    step = TelluriumUTCStep(
         config={
             'model': MODEL_DECAY,
             'start_time': 0.0,

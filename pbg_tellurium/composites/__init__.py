@@ -111,7 +111,7 @@ def make_tellurium_document(
 
 
 def register_tellurium(core=None):
-    """Return a core with TelluriumProcess + TelluriumStep, the RAM emitter,
+    """Return a core with TelluriumProcess + TelluriumUTCStep, the RAM emitter,
     and the species-time-series Visualization registered."""
     if core is None:
         core = allocate_core()
