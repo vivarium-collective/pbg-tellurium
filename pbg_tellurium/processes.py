@@ -6,21 +6,7 @@ initialized on first update() call.
 """
 
 import os
-from pathlib import Path
 from process_bigraph import Process, Step
-
-
-def _model_path_resolution(model_source: str) -> str:
-    """Resolve a model reference to a loadable path or URL.
-
-    URLs pass through unchanged; relative paths resolve against Path.cwd().
-    """
-    if model_source.startswith(('http://', 'https://')):
-        return model_source
-    p = Path(model_source)
-    if not p.is_absolute():
-        p = Path.cwd() / p
-    return str(p)
 
 
 def _load_roadrunner(model_source, model_format='antimony', model_file=''):
@@ -207,9 +193,8 @@ class BaseTelluriumStep(Step):
         if not cfg['model'] and not cfg['model_file']:
             raise ValueError(
                 "Tellurium step requires either 'model' or 'model_file'.")
-        model_source = _model_path_resolution(cfg['model'])
         self._rr = _load_roadrunner(
-            model_source,
+            cfg['model'],
             model_format=cfg['model_format'],
             model_file=cfg.get('model_file', ''),
         )
