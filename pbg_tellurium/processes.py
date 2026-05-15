@@ -273,3 +273,37 @@ class TelluriumUTCStep(BaseTelluriumStep):
             'time_series': times,
             'species_trajectories': species,
         }
+
+
+class TelluriumSteadyStateStep(BaseTelluriumStep):
+    """Steady-state solve via Tellurium / roadrunner.
+
+    Loads the model and computes steady-state species concentrations
+    rather than a trajectory. Use when you want the equilibrium state
+    of an SBML/antimony model.
+    """
+
+    config_schema = {
+        **BaseTelluriumStep.config_schema,
+    }
+
+    def outputs(self):
+        return {
+            'steady_state_concentrations': 'overwrite[map[float]]',
+        }
+
+    def update(self, state):
+        self._tellurium_initialize()
+
+        try:
+            self._rr.steadyState()
+        except Exception as e:
+            raise RuntimeError(f"Tellurium steadyState() failed: {e}")
+
+        conc_ss = self._rr.getFloatingSpeciesConcentrations()
+        species_ss = {
+            sid: float(conc_ss[i])
+            for i, sid in enumerate(self._species_ids)
+        }
+
+        return {'steady_state_concentrations': species_ss}

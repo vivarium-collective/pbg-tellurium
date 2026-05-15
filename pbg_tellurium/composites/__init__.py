@@ -24,7 +24,7 @@ import yaml
 from process_bigraph import allocate_core
 from process_bigraph.emitter import RAMEmitter
 
-from pbg_tellurium.processes import TelluriumProcess, TelluriumUTCStep
+from pbg_tellurium.processes import TelluriumProcess, TelluriumUTCStep, TelluriumSteadyStateStep
 
 
 # ---------------------------------------------------------------------------
@@ -110,6 +110,62 @@ def make_tellurium_document(
     }
 
 
+def make_tellurium_steady_state_document(
+    model='',
+    model_format='antimony',
+    model_file='',
+    species_overrides=None,
+    parameter_overrides=None,
+):
+    """Create a composite document for a Tellurium steady-state solve.
+
+    Returns a document dict ready for use with Composite().
+
+    Args:
+        model: Antimony or SBML source string.
+        model_format: 'antimony' or 'sbml'.
+        model_file: Optional path to a local model file.
+        species_overrides: {species_id: initial_value}.
+        parameter_overrides: {parameter_id: value}.
+
+    Returns:
+        dict: Composite document with TelluriumSteadyStateStep, stores, and emitter.
+    """
+    species_overrides = species_overrides or {}
+    parameter_overrides = parameter_overrides or {}
+
+    return {
+        'steady_state': {
+            '_type': 'step',
+            'address': 'local:TelluriumSteadyStateStep',
+            'config': {
+                'model': model,
+                'model_format': model_format,
+                'model_file': model_file,
+                'species_overrides': species_overrides,
+                'parameter_overrides': parameter_overrides,
+            },
+            'inputs': {},
+            'outputs': {
+                'steady_state_concentrations': ['ss_results', 'concentrations'],
+            },
+        },
+        'ss_results': {},
+        'emitter': {
+            '_type': 'step',
+            'address': 'local:ram-emitter',
+            'config': {
+                'emit': {
+                    'concentrations': 'map[float]',
+                },
+            },
+            'inputs': {
+                'concentrations': ['ss_results', 'concentrations'],
+            },
+        },
+    }
+
+
 def register_tellurium(core=None):
     """Return a core with TelluriumProcess + TelluriumUTCStep, the RAM emitter,
     and the species-time-series Visualization registered."""
@@ -117,6 +173,7 @@ def register_tellurium(core=None):
         core = allocate_core()
     core.register_link('TelluriumProcess', TelluriumProcess)
     core.register_link('TelluriumUTCStep', TelluriumUTCStep)
+    core.register_link('TelluriumSteadyStateStep', TelluriumSteadyStateStep)
     core.register_link('ram-emitter', RAMEmitter)
     # Register Visualization Steps so composites can wire them by name.
     from pbg_tellurium.visualizations import SpeciesTimeSeriesPlots

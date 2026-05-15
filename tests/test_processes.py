@@ -2,7 +2,7 @@
 
 import pytest
 from process_bigraph import allocate_core
-from pbg_tellurium.processes import TelluriumProcess, TelluriumUTCStep
+from pbg_tellurium.processes import TelluriumProcess, TelluriumUTCStep, TelluriumSteadyStateStep
 
 
 MODEL_DECAY = """
@@ -28,6 +28,7 @@ def core():
     c = allocate_core()
     c.register_link('TelluriumProcess', TelluriumProcess)
     c.register_link('TelluriumUTCStep', TelluriumUTCStep)
+    c.register_link('TelluriumSteadyStateStep', TelluriumSteadyStateStep)
     return c
 
 
@@ -161,3 +162,28 @@ def test_tellurium_step(core):
     # S1 should decrease monotonically
     s1 = result['species_trajectories']['S1']
     assert s1[0] > s1[-1]
+
+
+def test_tellurium_steady_state_step(core):
+    """SteadyStateStep loads a model and returns species concentrations at equilibrium.
+
+    MODEL_DECAY (S1 -> S2 with first-order decay) has a trivial steady state
+    at S1=0, S2=anything, because the only flux is the irreversible decay.
+    RoadRunner's steadyState() converges to that equilibrium successfully.
+    """
+    from pbg_tellurium.processes import TelluriumSteadyStateStep
+
+    step = TelluriumSteadyStateStep(
+        config={'model': MODEL_DECAY, 'model_format': 'antimony'},
+        core=core,
+    )
+    out = step.update({})
+    assert 'steady_state_concentrations' in out
+    concs = out['steady_state_concentrations']
+    assert isinstance(concs, dict)
+    assert len(concs) > 0
+    # All values must be finite floats
+    import math
+    for sid, val in concs.items():
+        assert isinstance(val, float), f"{sid} is not float: {type(val)}"
+        assert math.isfinite(val), f"{sid} steady-state concentration is not finite: {val}"
