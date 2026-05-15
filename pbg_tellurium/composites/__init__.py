@@ -24,7 +24,7 @@ import yaml
 from process_bigraph import allocate_core
 from process_bigraph.emitter import RAMEmitter
 
-from pbg_tellurium.processes import TelluriumProcess, TelluriumStep
+from pbg_tellurium.processes import TelluriumProcess, TelluriumUTCStep
 
 
 # ---------------------------------------------------------------------------
@@ -116,7 +116,7 @@ def register_tellurium(core=None):
     if core is None:
         core = allocate_core()
     core.register_link('TelluriumProcess', TelluriumProcess)
-    core.register_link('TelluriumStep', TelluriumStep)
+    core.register_link('TelluriumUTCStep', TelluriumUTCStep)
     core.register_link('ram-emitter', RAMEmitter)
     # Register Visualization Steps so composites can wire them by name.
     from pbg_tellurium.visualizations import SpeciesTimeSeriesPlots

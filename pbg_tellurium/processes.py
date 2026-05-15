@@ -230,22 +230,17 @@ class BaseTelluriumStep(Step):
         return {}
 
 
-class TelluriumStep(Step):
-    """One-shot simulation Step that returns a dense trajectory.
+class TelluriumUTCStep(BaseTelluriumStep):
+    """One-shot UTC simulation Step returning a dense trajectory.
 
-    Unlike TelluriumProcess (which advances incrementally), this Step
-    loads a model, simulates a fixed span start-to-end, and returns the
-    full time series as parallel lists. Use when you want a static
-    trajectory rather than time-coupled stepping.
-
-    Config: same as TelluriumProcess, plus:
-        start_time: Simulation start time.
-        end_time: Simulation end time.
-        n_points: Number of output points (including endpoints).
+    Loads a model, simulates a fixed span start-to-end, and returns
+    the full time series as parallel lists. Use when you want a
+    static trajectory rather than time-coupled stepping
+    (TelluriumProcess covers the incremental case).
     """
 
     config_schema = {
-        **TelluriumProcess.config_schema,
+        **BaseTelluriumStep.config_schema,
         'start_time': {'_type': 'float', '_default': 0.0},
         'end_time': {'_type': 'float', '_default': 10.0},
         'n_points': {'_type': 'integer', '_default': 101},
@@ -261,21 +256,9 @@ class TelluriumStep(Step):
         }
 
     def update(self, state):
-        rr = _load_roadrunner(
-            self.config['model'],
-            model_format=self.config['model_format'],
-            model_file=self.config['model_file'])
+        self._tellurium_initialize()
 
-        for sid, val in self.config['species_overrides'].items():
-            rr[sid] = float(val)
-        for pid, val in self.config['parameter_overrides'].items():
-            rr[pid] = float(val)
-
-        integrator = self.config['integrator']
-        if integrator and integrator != 'cvode':
-            rr.setIntegrator(integrator)
-
-        result = rr.simulate(
+        result = self._rr.simulate(
             self.config['start_time'],
             self.config['end_time'],
             self.config['n_points'])
