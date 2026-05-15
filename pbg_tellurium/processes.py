@@ -206,7 +206,7 @@ class BaseTelluriumStep(Step):
         cfg = self.config
         if not cfg['model'] and not cfg['model_file']:
             raise ValueError(
-                "TelluriumProcess requires either 'model' or 'model_file'.")
+                "Tellurium step requires either 'model' or 'model_file'.")
         model_source = _model_path_resolution(cfg['model'])
         self._rr = _load_roadrunner(
             model_source,
@@ -216,6 +216,17 @@ class BaseTelluriumStep(Step):
         self._species_ids = list(self._rr.getFloatingSpeciesIds())
         self._reaction_ids = list(self._rr.getReactionIds())
         self._species_index = {sid: i for i, sid in enumerate(self._species_ids)}
+
+        # Apply species and parameter overrides
+        for sid, val in cfg.get('species_overrides', {}).items():
+            self._rr[sid] = float(val)
+        for pid, val in cfg.get('parameter_overrides', {}).items():
+            self._rr[pid] = float(val)
+
+        # Integrator selection
+        integrator = cfg.get('integrator', 'cvode')
+        if integrator and integrator != 'cvode':
+            self._rr.setIntegrator(integrator)
 
     def initial_state(self):
         self._tellurium_initialize()
