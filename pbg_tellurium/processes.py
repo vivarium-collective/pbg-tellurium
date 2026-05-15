@@ -6,7 +6,21 @@ initialized on first update() call.
 """
 
 import os
+from pathlib import Path
 from process_bigraph import Process, Step
+
+
+def _model_path_resolution(model_source: str) -> str:
+    """Resolve a model reference to a loadable path or URL.
+
+    URLs pass through unchanged; relative paths resolve against Path.cwd().
+    """
+    if model_source.startswith(('http://', 'https://')):
+        return model_source
+    p = Path(model_source)
+    if not p.is_absolute():
+        p = Path.cwd() / p
+    return str(p)
 
 
 def _load_roadrunner(model_source, model_format='antimony', model_file=''):
@@ -172,6 +186,46 @@ class TelluriumProcess(Process):
         """Return the current SBML serialization of the loaded model."""
         self._build()
         return self._rr.getCurrentSBML()
+
+
+class BaseTelluriumStep(Step):
+    """Abstract base for Tellurium-backed Steps.
+
+    Provides shared SBML/antimony model loading via _load_roadrunner,
+    plus species-id caching. Subclasses implement update() with the
+    specific simulation they perform (UTC, steady state, etc.).
+    """
+
+    config_schema = {
+        **TelluriumProcess.config_schema,
+    }
+
+    def _tellurium_initialize(self):
+        model_source = _model_path_resolution(self.config['model'])
+        self.rr = _load_roadrunner(
+            model_source,
+            model_format=self.config['model_format'],
+            model_file=self.config.get('model_file', ''),
+        )
+        self.species_ids = list(self.rr.getFloatingSpeciesIds())
+        self.reaction_ids = list(self.rr.getReactionIds())
+        self._species_index = {sid: i for i, sid in enumerate(self.species_ids)}
+
+    def initial_state(self):
+        if not hasattr(self, 'rr'):
+            self._tellurium_initialize()
+        conc = self.rr.getFloatingSpeciesConcentrations()
+        return {
+            'species_concentrations': {
+                sid: float(conc[i]) for i, sid in enumerate(self.species_ids)
+            }
+        }
+
+    def inputs(self):
+        return {}
+
+    def outputs(self):
+        return {'html': 'string'}  # overridden by concrete subclasses
 
 
 class TelluriumStep(Step):
